@@ -15,14 +15,17 @@
         <h1 class="text-5xl font-bold text-red-900">Tienda Online</h1>
         <nav id="menu" class="hidden md:flex md:items-center md:space-x-4">
             <ul class="flex space-x-4">
-                <li><a class="text-gray-900 hover:text-red-500">Inicio</a></li>
-                <li><a class="text-gray-900 hover:text-red-500">Productos</a></li>
-                <li><a class="text-gray-900 hover:text-red-500">Contacto</a></li>
+                <li><a href="index.html" class="text-gray-900 hover:text-red-500">Inicio</a></li>
+                <li><a href="contacto.html" class="text-gray-900 hover:text-red-500">Contacto</a></li>
             </ul>
+            <button onclick="window.location.href='login.html'"
+                class="ml-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                Cerrar sesión
+            </button>
         </nav>
     </header>
     <main class="flex justify-center items-center py-8 mb-9">
-        <section >
+        <section>
             <div class="text-center">
                 <h2 class="text-6xl font-bold py-6">Catálogo de Productos</h2>
                 <p class="text-3xl text-gray-600 font-verdana">Explora nuestra seleccion de productos disponibles</p>
@@ -32,18 +35,18 @@
 
     <main>
         <div id="buscador" class="flex flex-col gap-8 items-center mb-8">
-            <input type="text" id="busqueda" placeholder="Buscar productos..." 
-            class="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 w-1/2">
+            <input type="text" id="busqueda" placeholder="Buscar productos..."
+                class="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 w-1/2">
 
             <div id="categorias" class="flex flex-wrap justify-center items-center">
-                
+
             </div>
         </div>
     </main>
 
     <main>
         <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ld:grid-cols-4 gap-4">
-            
+
         </div>
     </main>
 

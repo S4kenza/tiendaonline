@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Tienda Online</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        .login-container {
+            width: 300px; margin: 100px auto; padding: 20px;
+            background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;
+        }
+        button {
+            width: 100%; padding: 10px; background: #ac1010; color: #fff;
+            border: none; border-radius: 4px; cursor: pointer;
+        }
+        .error { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Usuario" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Entrar</button>
+            <div class="error" id="errorMsg"></div>
+        </form>
+        <button type="button" onclick="mostrarCredenciales()">Mostrar usuario de prueba</button>
+    </div>
+    <script>
+        async function mostrarCredenciales() {
+            try {
+                const res = await fetch('https://fakestoreapi.com/users');
+                const users = await res.json();
+                if (users.length > 0) {
+                    const user = users[0];
+                    alert(`Usuario de prueba:\nUsuario: ${user.username}\nContraseña: 'password'`);
+                } else {
+                    alert('No se encontraron usuarios de prueba.');
+                }
+            } catch (err) {
+                alert('No se pudieron obtener las credenciales de prueba.');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    const errorMsg = document.getElementById('errorMsg');
+                    errorMsg.textContent = '';
+
+                    try {
+                        const res = await fetch('https://fakestoreapi.com/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, password })
+                        });
+                        const data = await res.json();
+                        if (data.token) {
+                            window.location.href = 'index.html';
+                        } else {
+                            errorMsg.textContent = 'Usuario o contraseña incorrectos.';
+                        }
+                    } catch (err) {
+                        errorMsg.textContent = 'Error al conectar con el servidor.';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
