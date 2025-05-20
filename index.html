@@ -8,7 +8,11 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
+<script>
+    if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+    }
+</script>
 
 <body class="bg-gray-100 text-black-900">
     <header class="flex justify-between items-center m-8">

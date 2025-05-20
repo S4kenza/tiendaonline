@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+  <script>
+    if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+    }
+</script>
+
   <meta charset="UTF-8" />
   <title>Detalle del Producto</title>
   <script src="https://cdn.tailwindcss.com"></script>

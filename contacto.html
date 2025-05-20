@@ -13,6 +13,11 @@
         }
     </style>
 </head>
+<script>
+    if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+    }
+</script>
 
 <body class="bg-gray-100 text-gray-900">
     <header class="bg-white shadow px-6 py-4 text-xl font-bold text-red-600">
@@ -68,7 +73,7 @@
             });
         }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=**KEY**ApiKey&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqcMfLmElyVMMpZUvxokgmlvGTS0hp_xA&callback=initMap" async defer></script>
 </body>
 
 </html>
