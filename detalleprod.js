@@ -8,18 +8,26 @@ async function cargarDetalleProducto() {
   }
 
   try {
-    const respuesta = await fetch(`https://fakestoreapi.com/products/${id}`);
+    const respuesta = await fetch(`http://127.0.0.1:8000/api/productos/${id}`);
     if (!respuesta.ok) throw new Error("Error en la respuesta");
 
     const producto = await respuesta.json();
+    let nombresCategorias = '';
+    if (Array.isArray(producto.categorias)) {
+      nombresCategorias = producto.categorias.map(cat => cat.nombre).join(', ');
+    } else if (producto.categorias && producto.categorias.nombre) {
+      nombresCategorias = producto.categorias.nombre;
+    } else {
+      nombresCategorias = 'Sin categoría';
+    }
 
     document.getElementById('detalleProducto').innerHTML = `
-      <img src="${producto.image}" alt="${producto.title}" class="w-full md:w-1/2 rounded-md object-contain max-h-96" />
+      <img src="${producto.imagen}" alt="${producto.titulo}" class="w-full md:w-1/2 rounded-md object-contain max-h-96" />
       <div class="flex-1">
-        <h2 class="text-2xl font-semibold mb-2">${producto.title}</h2>
-        <p class="text-gray-600 mb-4">${producto.category}</p>
-        <p class="text-gray-700 mb-4">${producto.description}</p>
-        <p class="text-lg font-bold text-green-600">$${producto.price}</p>
+        <h2 class="text-2xl font-semibold mb-2">${producto.titulo}</h2>
+        <p class="text-gray-600 mb-4">${nombresCategorias}</p>
+        <p class="text-gray-700 mb-4">${producto.descripcion}</p>
+        <p class="text-lg font-bold text-green-600">$${producto.precio}</p>
       </div>
     `;
   } catch (error) {

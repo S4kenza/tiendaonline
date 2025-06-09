@@ -9,7 +9,7 @@ let categoriaSeleccionada = "all";
 async function cargarProductos() {
     try {
         mostrarMensajeCargando();
-        const respuesta = await fetch("https://fakestoreapi.com/products");
+        const respuesta = await fetch("http://127.0.0.1:8000/api/productos");
         if (!respuesta.ok) {
             throw new Error("Error en la respuesta de la API");
         }
@@ -44,7 +44,7 @@ function filtrarProductos() {
 // Cargar categorías desde la API
 async function cargarCategorias() {
     try {
-        const respuesta = await fetch("https://fakestoreapi.com/products/categories");
+        const respuesta = await fetch("http://127.0.0.1:8000/api/categorias");
         if (!respuesta.ok) {
             throw new Error("Error en la respuesta de la API");
         }
@@ -67,9 +67,9 @@ function mostrarProductos(productosAMostrar) {
             productoDiv.className =
                 "bg-white rounded-lg shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow duration-300";
             productoDiv.innerHTML = `
-                <img src="${producto.image}" alt="${producto.title}" class="w-32 h-32 object-contain m-4">
-                <h2 class="text-lg font-bold mb-2">${producto.title}</h2>
-                <p class="text-gray-700 mb-2">$${producto.price}</p>
+                <img src="${producto.imagen}" alt="${producto.titulo}" class="w-32 h-32 object-contain m-4">
+                <h2 class="text-lg font-bold mb-2">${producto.titulo}</h2>
+                <p class="text-gray-700 mb-2">$${producto.precio}</p>
                 <button class="bg-green-400 text-white px-4 py-2 rounded hover:bg-green-450 transition-colors duration-300">Agregar al carrito</button>
                 <a href="detalle.html?id=${producto.id}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-300 transition-colors duration-300 mt-2 block text-center">Detalles</a>
             `;

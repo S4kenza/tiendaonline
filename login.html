@@ -31,22 +31,14 @@
         <button type="button" onclick="mostrarCredenciales()">Mostrar usuario de prueba</button>
     </div>
     <script>
-        async function mostrarCredenciales() {
-            try {
-                const res = await fetch('https://fakestoreapi.com/users');
-                const users = await res.json();
-                if (users.length > 0) {
-                    const user = users[0];
-                    alert(`Usuario de prueba:\nUsuario: ${user.username}\nContraseña: 'password'`);
-                } else {
-                    alert('No se encontraron usuarios de prueba.');
-                }
-            } catch (err) {
-                alert('No se pudieron obtener las credenciales de prueba.');
-            }
+
+        // Guarda el token en localStorage después de iniciar sesión correctamente
+        function guardarToken(token) {
+            localStorage.setItem('authToken', token);
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        // Listener para el formulario de login
+        document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', async function(e) {
@@ -57,13 +49,14 @@
                     errorMsg.textContent = '';
 
                     try {
-                        const res = await fetch('https://fakestoreapi.com/auth/login', {
+                        const res = await fetch('http://127.0.0.1:8000/api/login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ username, password })
+                            body: JSON.stringify({ email:username, password:password })
                         });
                         const data = await res.json();
-                        if (data.token) {
+                        if (data.access_token) {
+                            guardarToken(data.acces_token);
                             window.location.href = 'index.html';
                         } else {
                             errorMsg.textContent = 'Usuario o contraseña incorrectos.';
