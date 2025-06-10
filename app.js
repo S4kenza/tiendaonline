@@ -84,6 +84,10 @@ function mostrarProductos(productosAMostrar) {
                 <p class="text-gray-700 mb-2">$${producto.precio}</p>
                 <button class="bg-green-400 text-white px-4 py-2 rounded hover:bg-green-450 transition-colors duration-300">Agregar al carrito</button>
                 <a href="detalle.html?id=${producto.id}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-300 transition-colors duration-300 mt-2 block text-center">Detalles</a>
+                ${localStorage.getItem('rol') === 'admin' ? `
+                    <button onclick="window.location.href='crud.html?edit=${producto.id}'" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors duration-300 mt-2">Actualizar</button>
+                    <button onclick="eliminarProducto('${producto.id}', '${producto.imagen}')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors duration-300 mt-2">Eliminar</button>
+                ` : ''}
             `;
             contenedorProductos.appendChild(productoDiv);
         });
@@ -118,6 +122,38 @@ function mostrarMensajeCargando() {
 function mostrarMensajeError(mensaje = "Error al cargar los productos. Por favor, inténtalo de nuevo más tarde.") {
     contenedorProductos.innerHTML =
         `<p class='text-2xl font-bold text-center text-gray-800 col-span-full m-4'>${mensaje}</p>`;
+}
+
+// Eliminar producto de la base de datos y de Firebase Storage
+async function eliminarProducto(id, imagenUrl) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+    try {
+        // Eliminar de la base de datos
+        const res = await fetch(`http://127.0.0.1:8000/api/productos/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+            }
+        });
+        if (res.ok) {
+            // Eliminar de Firebase Storage
+            if (imagenUrl) {
+                try {
+                    const storageRef = firebase.storage().refFromURL(imagenUrl);
+                    await storageRef.delete();
+                } catch (e) {
+                    // Si falla la eliminación de la imagen, solo muestra un warning
+                    alert('Producto eliminado, pero no se pudo borrar la imagen de Firebase.');
+                }
+            }
+            alert('Producto eliminado correctamente.');
+            window.location.reload();
+        } else {
+            alert('Error al eliminar el producto de la base de datos.');
+        }
+    } catch (err) {
+        alert('Error al eliminar el producto.');
+    }
 }
 
 // Eventos

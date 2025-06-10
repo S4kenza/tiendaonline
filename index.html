@@ -10,6 +10,16 @@
 </head>
 
 <body class="bg-gray-100 text-black-900">
+    <script>
+        // Redirección automática según el rol
+        document.addEventListener('DOMContentLoaded', function() {
+            const rol = localStorage.getItem('rol');
+            if (rol === 'admin') {
+                window.location.href = 'indexadmin.html';
+            }
+        });
+    </script>
+
     <header class="flex justify-between items-center m-8">
         <h1 class="text-5xl font-bold text-red-900">Tienda Online</h1>
         <nav id="menu" class="hidden md:flex md:items-center md:space-x-4">
@@ -23,8 +33,23 @@
             </button>
             <script>
                 function logout() {
-                    localStorage.removeItem('authToken');
-                    window.location.href = 'login.html';
+                    const token = localStorage.getItem('authToken');
+                    if (token) {
+                        fetch('http://127.0.0.1:8000/api/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            }
+                        })
+                        .finally(() => {
+                            localStorage.removeItem('authToken');
+                            localStorage.removeItem('rol');
+                            window.location.href = 'login.html';
+                        });
+                    } else {
+                        window.location.href = 'login.html';
+                    }
                 }
             </script>
         </nav>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Administrador - TiendaOnline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-storage-compat.js"></script>
+ <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJUyvuIogOqyrm629aPJSIsrUDplKzxVE",
+      authDomain: "catalogo-laravel-49a76.firebaseapp.com",
+      projectId: "catalogo-laravel-49a76",
+      storageBucket: "catalogo-laravel-49a76.firebasestorage.app",
+      messagingSenderId: "956698369387",
+      appId: "1:956698369387:web:94450ab611b9673346c02e"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <script>
+        if (!localStorage.getItem('authToken') || localStorage.getItem('rol') !== 'admin') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <a href="indexadmin.html" class="inline-block mb-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition">&larr; Volver al panel admin</a>
+    <div class="max-w-xl mx-auto mt-10 bg-white p-8 rounded shadow">
+        <h2 class="text-2xl font-bold mb-6 text-center text-red-900">Agregar Nuevo Producto</h2>
+        <form id="form-producto" class="space-y-4">
+            <div>
+                <label class="block font-semibold mb-1">Título</label>
+                <input type="text" id="titulo" class="w-full border rounded px-3 py-2" required />
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Descripción</label>
+                <textarea id="descripcion" class="w-full border rounded px-3 py-2" required></textarea>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Precio</label>
+                <input type="number" id="precio" class="w-full border rounded px-3 py-2" min="0" step="0.01" required />
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Stock</label>
+                <input type="number" id="stock" class="w-full border rounded px-3 py-2" min="0" step="1" required />
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Imagen</label>
+                <input type="file" id="imagen" accept="image/*" class="w-full" required />
+                <progress id="progress" value="0" max="100" class="w-full mt-2 hidden"></progress>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Categorías</label>
+                <select id="categoria" class="w-full border rounded px-3 py-2" multiple required></select>
+                <small class="text-gray-500">Ctrl+Click para seleccionar varias</small>
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Guardar Producto</button>
+        </form>
+        <div id="form-mensaje" class="mt-4 text-center"></div>
+    </div>
+    <script>
+    // Cargar categorías en el select
+    document.addEventListener('DOMContentLoaded', async () => {
+        const select = document.getElementById('categoria');
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/categoria');
+            const categorias = await res.json();
+            categorias.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.nombre;
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            select.innerHTML = '<option>Error al cargar categorías</option>';
+        }
+    });
+    // Subir imagen a Firebase y guardar producto
+    document.getElementById('form-producto').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const mensaje = document.getElementById('form-mensaje');
+        mensaje.textContent = '';
+        const titulo = document.getElementById('titulo').value;
+        const descripcion = document.getElementById('descripcion').value;
+        const precio = document.getElementById('precio').value;
+        const stock = document.getElementById('stock').value;
+        const categoriaSelect = document.getElementById('categoria');
+        const categorias = Array.from(categoriaSelect.selectedOptions).map(opt => opt.value);
+        const imagenInput = document.getElementById('imagen');
+        const file = imagenInput.files[0];
+        if (!file) { mensaje.textContent = 'Selecciona una imagen.'; return; }
+        const progress = document.getElementById('progress');
+        progress.classList.remove('hidden');
+        const storageRef = firebase.storage().ref('productosBenja/' + Date.now() + '_' + file.name);
+        const uploadTask = storageRef.put(file);
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                progress.value = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            },
+            (error) => {
+                mensaje.textContent = 'Error al subir imagen.';
+                progress.classList.add('hidden');
+            },
+            async () => {
+                const url = await uploadTask.snapshot.ref.getDownloadURL();
+                // Enviar datos a la API
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/api/productos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+                        },
+                        body: JSON.stringify({
+                            titulo,
+                            descripcion,
+                            precio,
+                            stock,
+                            imagen: url,
+                            categoria: categorias
+                        })
+                    });
+                    if (res.ok) {
+                        mensaje.textContent = 'Producto agregado correctamente.';
+                        mensaje.className = 'text-green-600 mt-4';
+                        document.getElementById('form-producto').reset();
+                        progress.value = 0;
+                        progress.classList.add('hidden');
+                    } else {
+                        const errorData = await res.json().catch(() => ({}));
+                        mensaje.textContent = errorData.message || 'Error al guardar el producto.';
+                        mensaje.className = 'text-red-600 mt-4';
+                        progress.classList.add('hidden');
+                    }
+                } catch (err) {
+                    mensaje.textContent = 'Error al guardar el producto.';
+                    mensaje.className = 'text-red-600 mt-4';
+                    progress.classList.add('hidden');
+                }
+            }
+        );
+    });
+    // Detectar modo edición y cargar datos del producto
+const params = new URLSearchParams(window.location.search);
+const editId = params.get('edit');
+if (editId) {
+    document.querySelector('h2').textContent = 'Editar Producto';
+    // Obtener datos del producto y llenar el formulario
+    fetch(`http://127.0.0.1:8000/api/productos/${editId}`, {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        }
+    })
+    .then(res => res.json())
+    .then(producto => {
+        document.getElementById('titulo').value = producto.titulo || '';
+        document.getElementById('descripcion').value = producto.descripcion || '';
+        document.getElementById('precio').value = producto.precio || '';
+        document.getElementById('stock').value = producto.stock || '';
+        // Seleccionar categorías
+        const select = document.getElementById('categoria');
+        if (producto.categorias && Array.isArray(producto.categorias)) {
+            Array.from(select.options).forEach(opt => {
+                opt.selected = producto.categorias.some(cat => String(cat.id) === String(opt.value));
+            });
+        }
+        // Mostrar imagen actual (opcional)
+        if (producto.imagen) {
+            let imgPreview = document.getElementById('img-preview');
+            if (!imgPreview) {
+                imgPreview = document.createElement('img');
+                imgPreview.id = 'img-preview';
+                imgPreview.className = 'w-32 h-32 object-contain mx-auto my-2';
+                document.getElementById('imagen').insertAdjacentElement('afterend', imgPreview);
+            }
+            imgPreview.src = producto.imagen;
+        }
+    });
+    // Cambiar texto del botón
+    document.querySelector('#form-producto button[type="submit"]').textContent = 'Actualizar Producto';
+}
+    </script>
+</body>
+</html>
