@@ -33,10 +33,10 @@
     <script>
 
         // Guarda el token en localStorage después de iniciar sesión correctamente
-        function guardarToken(token) {
-            localStorage.setItem('authToken', token);
+        function guardarToken(user) {
+            localStorage.setItem('authToken', user.access_token);
+            localStorage.setItem('rol', user.user.rol);
         }
-
         // Listener para el formulario de login
         document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('loginForm');
@@ -55,9 +55,14 @@
                             body: JSON.stringify({ email:username, password:password })
                         });
                         const data = await res.json();
-                        if (data.access_token) {
-                            guardarToken(data.acces_token);
+                        if (data.access_token && data.user.rol === 'cliente') {
+                            guardarToken(data);
                             window.location.href = 'index.html';
+                        } else if (data.access_token && data.user.rol === 'admin') {
+                            guardarToken(data);
+                            window.location.href = 'indexadmin.html';
+                        } else if (data.error) {
+                            errorMsg.textContent = data.error;
                         } else {
                             errorMsg.textContent = 'Usuario o contraseña incorrectos.';
                         }

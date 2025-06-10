@@ -4,7 +4,7 @@ const inputBuscar = document.getElementById("busqueda");
 
 let productos = [];
 let categoriaSeleccionada = "all";
-
+let categoriaMap = {};
 // Cargar productos desde la API
 async function cargarProductos() {
     try {
@@ -36,7 +36,14 @@ function filtrarProductos() {
         );
     }
     if (categoriaSeleccionada !== "all") {
-        filtrados = filtrados.filter((p) => p.category === categoriaSeleccionada);
+        const categoriaId = categoriaMap[categoriaSeleccionada];
+        filtrados = filtrados.filter((p) => {
+            // Si el producto tiene un array de categorias relacionadas
+            if (Array.isArray(p.categorias)) {
+                return p.categorias.some(cat => String(cat.id) === String(categoriaId));
+            }
+            return false;
+        });
     }
     mostrarProductos(filtrados);
 }
@@ -44,12 +51,17 @@ function filtrarProductos() {
 // Cargar categorías desde la API
 async function cargarCategorias() {
     try {
-        const respuesta = await fetch("http://127.0.0.1:8000/api/categorias");
+        const respuesta = await fetch("http://127.0.0.1:8000/api/categoria");
         if (!respuesta.ok) {
             throw new Error("Error en la respuesta de la API");
         }
         const categorias = await respuesta.json();
-        mostrarCategorias(["all", ...categorias]);
+        // Crear el mapa slug -> id
+        categoriaMap = {};
+        categorias.forEach(cat => {
+            categoriaMap[cat.slug] = cat.id;
+        });
+        mostrarCategorias([{ slug: "all", nombre: "Todas" }, ...categorias]);
     } catch (error) {
         console.error("Error al cargar las categorias: ", error);
     }
@@ -84,11 +96,11 @@ function mostrarCategorias(categorias) {
     categorias.forEach((categoria) => {
         const categoriaButton = document.createElement("button");
         categoriaButton.className = `
-            px-8 py-2 rounded-full ${categoriaSeleccionada === categoria ? "bg-green-800 text-white" : "bg-gray-200 text-gray-800"} 
+            px-8 py-2 rounded-full ${categoriaSeleccionada === categoria.slug ? "bg-green-800 text-white" : "bg-gray-200 text-gray-800"} 
             font-bold hover:bg-green-800 hover:text-white transition-colors duration-300`;
-        categoriaButton.textContent = categoria === "all" ? "All" : categoria.charAt(0).toUpperCase() + categoria.slice(1);
+        categoriaButton.textContent = categoria.nombre;
         categoriaButton.addEventListener("click", () => {
-            categoriaSeleccionada = categoria;
+            categoriaSeleccionada = categoria.slug;
             mostrarCategorias(categorias);
             filtrarProductos();
         });
