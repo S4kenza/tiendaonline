@@ -11,11 +11,40 @@
 
 <body class="bg-gray-100 text-black-900">
     <script>
-        // Redirección automática según el rol
+        // Consulta el carrito del backend y lo guarda en localStorage como 'carritoback'
+        async function obtenerCarritoBack() {
+            const token = localStorage.getItem('authToken');
+            const rol = localStorage.getItem('rol');
+            if (!token || rol !== 'cliente') return;
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/carrito', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const carritoId = data.id;
+                    // Guardar el carrito en localStorage
+                    if (carritoId) {
+                        localStorage.setItem('carritoId', carritoId);
+                    }                    
+                    localStorage.setItem('carritoback', JSON.stringify(data));
+                }
+            } catch (e) {
+                // Puedes mostrar un mensaje de error si lo deseas
+            }
+        }
+
+        // Redirección automática según el rol y consulta de carrito backend
         document.addEventListener('DOMContentLoaded', function() {
             const rol = localStorage.getItem('rol');
             if (rol === 'admin') {
                 window.location.href = 'indexadmin.html';
+            } else {
+                obtenerCarritoBack(); // Solo para clientes autenticados
             }
         });
     </script>
@@ -240,16 +269,22 @@ function mostrarFormularioEnvio() {
         // Enviar carrito a la API para guardarlo en la base de datos
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('http://127.0.0.1:8000/api/carritos', {
+            // Construir el array de productos con solo id y cantidad
+            const productosFormateados = carrito.map(p => ({ id: p.id, cantidad: p.cantidad }));
+            // Obtener carrito_id si existe en localStorage (opcional)
+            const carritoId = localStorage.getItem('carritoId');
+            const data = {
+                productos: productosFormateados,
+                direccion_id: direccionId
+            };
+            if (carritoId) data.carrito_id = Number(carritoId);
+            const res = await fetch('http://127.0.0.1:8000/api/carrito', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
                 },
-                body: JSON.stringify({
-                    productos: carrito,
-                    direccion_id: direccionId
-                })
+                body: JSON.stringify(data)
             });
             if (!res.ok) throw new Error('No se pudo guardar el carrito');
         } catch (err) {
