@@ -40,7 +40,8 @@ function filtrarProductos() {
         filtrados = filtrados.filter((p) => {
             // Si el producto tiene un array de categorias relacionadas
             if (Array.isArray(p.categorias)) {
-                return p.categorias.some(cat => String(cat.id) === String(categoriaId));
+                // Asegurarse de que los IDs sean numéricos para la comparación
+                return p.categorias.some(cat => Number(cat.id) === Number(categoriaId));
             }
             return false;
         });
@@ -82,16 +83,32 @@ function mostrarProductos(productosAMostrar) {
                 <img src="${producto.imagen}" alt="${producto.titulo}" class="w-32 h-32 object-contain m-4">
                 <h2 class="text-lg font-bold mb-2">${producto.titulo}</h2>
                 <p class="text-gray-700 mb-2">$${producto.precio}</p>
-                <button class="bg-green-400 text-white px-4 py-2 rounded hover:bg-green-450 transition-colors duration-300">Agregar al carrito</button>
+                ${localStorage.getItem('rol') !== 'admin' ? `<button class=\"bg-green-400 text-white px-4 py-2 rounded hover:bg-green-450 transition-colors duration-300 btn-agregar-carrito\" data-producto='${JSON.stringify({id: producto.id, titulo: producto.titulo, precio: Number(producto.precio), imagen: producto.imagen})}'>Agregar al carrito</button>` : ''}
                 <a href="detalle.html?id=${producto.id}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-300 transition-colors duration-300 mt-2 block text-center">Detalles</a>
                 ${localStorage.getItem('rol') === 'admin' ? `
-                    <button onclick="window.location.href='crud.html?edit=${producto.id}'" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors duration-300 mt-2">Actualizar</button>
-                    <button onclick="eliminarProducto('${producto.id}', '${producto.imagen}')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors duration-300 mt-2">Eliminar</button>
+                    <button onclick=\"window.location.href='crud.html?edit=${producto.id}'\" class=\"bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors duration-300 mt-2\">Actualizar</button>
+                    <button onclick=\"eliminarProducto('${producto.id}', '${producto.imagen}')\" class=\"bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors duration-300 mt-2\">Eliminar</button>
                 ` : ''}
             `;
             contenedorProductos.appendChild(productoDiv);
         });
     }
+    // Asignar eventos a los botones de agregar al carrito después de renderizar
+    document.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
+        btn.onclick = function() {
+            const prod = JSON.parse(this.dataset.producto);
+            if (typeof prod.precio === 'string') prod.precio = Number(prod.precio);
+            let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            const idx = carrito.findIndex(p => p.id === prod.id);
+            if (idx !== -1) {
+                carrito[idx].cantidad += 1;
+            } else {
+                carrito.push({ ...prod, cantidad: 1 });
+            }
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            if (typeof actualizarCarritoUI === 'function') actualizarCarritoUI();
+        };
+    });
 }
 
 // Mostrar botones de categorías

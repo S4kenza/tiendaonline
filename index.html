@@ -80,11 +80,214 @@
         </div>
     </main>
 
+    <div id="carrito-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+            <button id="cerrar-carrito" class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl">&times;</button>
+            <h3 class="text-2xl font-bold mb-4 text-red-900">Carrito de Compras</h3>
+            <div id="carrito-items" class="mb-4"></div>
+            <div class="flex justify-between items-center">
+                <span id="carrito-total" class="font-bold text-lg"></span>
+                <button id="vaciar-carrito" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Vaciar Carrito</button>
+                <button id="finalizar-compra" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition ml-2">Finalizar compra</button>
+            </div>
+        </div>
+    </div>
+    <button id="abrir-carrito" class="fixed bottom-8 right-8 bg-green-600 text-white rounded-full p-4 shadow-lg hover:bg-green-700 z-50 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 008.48 19h7.04a2 2 0 001.83-1.3L17 13M7 13V6h10v7" /></svg>
+        <span id="carrito-cantidad" class="font-bold">0</span>
+    </button>
+
     <footer class="bg-gray-900 text-white py-4 mt-8 px-6">
         <p>&copy; 2025 Benjamin Proaño</p>
     </footer>
 
     <script src="app.js"></script>
+    <script>
+        // --- CARRITO DE COMPRAS ---
+let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+function guardarCarrito() {
+    localStorage.setItem('carrito', JSON.stringify(carrito));
+    actualizarCarritoUI();
+}
+
+function agregarAlCarrito(producto) {
+    const idx = carrito.findIndex(p => p.id === producto.id);
+    if (idx !== -1) {
+        carrito[idx].cantidad += 1;
+    } else {
+        carrito.push({ ...producto, cantidad: 1 });
+    }
+    guardarCarrito();
+}
+
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(p => p.id !== id);
+    guardarCarrito();
+}
+
+function cambiarCantidad(id, delta) {
+    const idx = carrito.findIndex(p => p.id === id);
+    if (idx !== -1) {
+        carrito[idx].cantidad += delta;
+        if (carrito[idx].cantidad < 1) carrito[idx].cantidad = 1;
+        guardarCarrito();
+    }
+}
+
+function vaciarCarrito() {
+    carrito = [];
+    guardarCarrito();
+}
+
+function actualizarCarritoUI() {
+    const carritoCantidad = document.getElementById('carrito-cantidad');
+    const carritoItems = document.getElementById('carrito-items');
+    const carritoTotal = document.getElementById('carrito-total');
+    if (!carritoCantidad || !carritoItems || !carritoTotal) return;
+    carritoCantidad.textContent = carrito.reduce((acc, p) => acc + p.cantidad, 0);
+    if (carrito.length === 0) {
+        carritoItems.innerHTML = '<p class="text-gray-500">El carrito está vacío.</p>';
+        carritoTotal.textContent = '';
+        return;
+    }
+    let total = 0;
+    carritoItems.innerHTML = carrito.map(p => {
+        total += p.precio * p.cantidad;
+        return `<div class='flex items-center justify-between border-b py-2'>
+            <div class='flex items-center gap-2'>
+                <img src='${p.imagen}' class='w-12 h-12 object-contain rounded' alt='${p.titulo}'>
+                <div>
+                    <div class='font-bold'>${p.titulo}</div>
+                    <div class='text-sm text-gray-600'>$${p.precio.toFixed(2)}</div>
+                </div>
+            </div>
+            <div class='flex items-center gap-2'>
+                <button onclick='cambiarCantidad(${p.id}, -1)' class='bg-gray-200 px-2 rounded hover:bg-gray-300'>-</button>
+                <span class='font-bold'>${p.cantidad}</span>
+                <button onclick='cambiarCantidad(${p.id}, 1)' class='bg-gray-200 px-2 rounded hover:bg-gray-300'>+</button>
+                <button onclick='eliminarDelCarrito(${p.id})' class='ml-2 text-red-600 hover:text-red-800' title='Eliminar'>&#128465;</button>
+            </div>
+        </div>`;
+    }).join('');
+    carritoTotal.textContent = 'Total: $' + total.toFixed(2);
+}
+
+// Mostrar/ocultar modal carrito
+const modal = document.getElementById('carrito-modal');
+document.getElementById('abrir-carrito').onclick = () => { modal.classList.remove('hidden'); actualizarCarritoUI(); };
+document.getElementById('cerrar-carrito').onclick = () => modal.classList.add('hidden');
+document.getElementById('vaciar-carrito').onclick = () => { vaciarCarrito(); actualizarCarritoUI(); };
+document.getElementById('finalizar-compra').onclick = () => {
+    const token = localStorage.getItem('authToken');
+    const rol = localStorage.getItem('rol');
+    if (!token || rol !== 'cliente') {
+        localStorage.setItem('carritoPendiente', localStorage.getItem('carrito'));
+        alert('Debes iniciar sesión para finalizar la compra. Tu carrito se guardará.');
+        window.location.href = 'login.html';
+        return;
+    }
+    // Mostrar formulario de datos de envío
+    mostrarFormularioEnvio();
+};
+
+function mostrarFormularioEnvio() {
+    const modal = document.getElementById('carrito-modal');
+    const carritoItems = document.getElementById('carrito-items');
+    const carritoTotal = document.getElementById('carrito-total');
+    carritoItems.innerHTML += `
+        <form id="form-envio" class="mt-4 space-y-2 bg-gray-50 p-4 rounded">
+            <h4 class="font-bold text-lg mb-2">Datos de envío</h4>
+            <input type="text" id="direccion" placeholder="Dirección" class="w-full border rounded px-2 py-1" required><br>
+            <input type="text" id="ciudad" placeholder="Ciudad" class="w-full border rounded px-2 py-1" required><br>
+            <input type="text" id="provincia" placeholder="Provincia" class="w-full border rounded px-2 py-1" required><br>
+            <input type="text" id="telefono" placeholder="Teléfono" class="w-full border rounded px-2 py-1" required><br>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mt-2">Confirmar compra</button>
+        </form>
+        <div id="mensaje-compra" class="text-center mt-2"></div>
+    `;
+    document.getElementById('form-envio').onsubmit = async function(e) {
+        e.preventDefault();
+        const direccion = document.getElementById('direccion').value.trim();
+        const ciudad = document.getElementById('ciudad').value.trim();
+        const provincia = document.getElementById('provincia').value.trim();
+        const telefono = document.getElementById('telefono').value.trim();
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        let direccionId = null;
+        // Enviar datos a la API para guardar dirección y obtener su ID
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('http://127.0.0.1:8000/api/direcciones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    direccion,
+                    ciudad,
+                    provincia,
+                    telefono,
+                })
+            });
+            if (!res.ok) throw new Error('No se pudo guardar la dirección');
+            const data = await res.json();
+            direccionId = data.id || data.direccion_id || data.direccion?.id;
+        } catch (err) {
+            document.getElementById('mensaje-compra').textContent = 'Error al guardar la dirección.';
+            return;
+        }
+        // Enviar carrito a la API para guardarlo en la base de datos
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('http://127.0.0.1:8000/api/carritos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    productos: carrito,
+                    direccion_id: direccionId
+                })
+            });
+            if (!res.ok) throw new Error('No se pudo guardar el carrito');
+        } catch (err) {
+            document.getElementById('mensaje-compra').textContent = 'Error al guardar el carrito.';
+            return;
+        }
+        // Simular almacenamiento de compra local (opcional)
+        const compra = {
+            productos: carrito,
+            direccion: { direccion, ciudad, provincia, telefono },
+            estado: 'confirmada',
+            fecha: new Date().toISOString(),
+            usuario: localStorage.getItem('username') || 'cliente'
+        };
+        let compras = JSON.parse(localStorage.getItem('compras')) || [];
+        compras.push(compra);
+        localStorage.setItem('compras', JSON.stringify(compras));
+        localStorage.removeItem('carrito');
+        document.getElementById('mensaje-compra').textContent = '¡Compra confirmada!';
+        setTimeout(() => { window.location.reload(); }, 1500);
+    };
+}
+
+// Inicializar UI carrito
+actualizarCarritoUI();
+
+// --- INTEGRACIÓN CON CATÁLOGO ---
+// Esperar a que los productos se carguen y agregar botón "Agregar al carrito"
+const observer = new MutationObserver(() => {
+    document.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
+        btn.onclick = function() {
+            const prod = JSON.parse(this.dataset.producto);
+            agregarAlCarrito(prod);
+        };
+    });
+});
+observer.observe(document.getElementById('productos'), { childList: true, subtree: true });
+    </script>
 </body>
 
 </html>

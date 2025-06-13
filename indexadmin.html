@@ -15,10 +15,13 @@
     <header class="flex justify-between items-center m-8">
         <h1 class="text-5xl font-bold text-red-900">Tienda Online</h1>
         <nav id="menu" class="hidden md:flex md:items-center md:space-x-4">
-            <ul class="flex space-x-4">
-                <li><a href="index.html" class="text-gray-900 hover:text-red-500">Inicio</a></li>
-                <li><a href="contacto.html" class="text-gray-900 hover:text-red-500">Contacto</a></li>
-                <li><a href="crud.html" class="text-gray-900 hover:text-red-500 font-bold">Administrar productos</a></li>
+            <ul class="flex space-x-4 items-center">
+                <li>
+                    <button onclick="window.location.href='crud.html'" class="bg-green-700 text-white px-4 py-2 rounded shadow hover:bg-green-800 transition ml-2">+ Agregar producto</button>
+                </li>
+                <li>
+                    <button onclick="document.getElementById('admin-carritos').scrollIntoView({behavior: 'smooth'});" class="bg-blue-700 text-white px-4 py-2 rounded shadow hover:bg-blue-800 transition ml-2">Órdenes y carritos</button>
+                </li>
             </ul>
             <button onclick="logout()"
                 class="ml-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
@@ -67,9 +70,48 @@
         <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ld:grid-cols-4 gap-4">
         </div>
     </main>
+    <section class="max-w-3xl mx-auto mt-10 bg-white p-6 rounded shadow">
+        <h3 class="text-2xl font-bold mb-4 text-red-900">Órdenes y carritos de clientes</h3>
+        <div id="admin-carritos"></div>
+    </section>
     <footer class="bg-gray-900 text-white py-4 mt-8 px-6">
         <p>&copy; 2025 Benjamin Proaño</p>
     </footer>
     <script src="app.js"></script>
+    <script>
+    // Mostrar carritos y compras en admin
+    function renderAdminCarritos() {
+        const cont = document.getElementById('admin-carritos');
+        let compras = JSON.parse(localStorage.getItem('compras')) || [];
+        let carritosPendientes = JSON.parse(localStorage.getItem('carritoPendiente')) || [];
+        let html = '';
+        if (carritosPendientes.length > 0) {
+            html += `<div class='mb-4'><span class='font-bold'>Carrito almacenado:</span><ul>`;
+            carritosPendientes.forEach(p => {
+                html += `<li>${p.titulo} x${p.cantidad}</li>`;
+            });
+            html += `</ul><span class='text-yellow-600 font-bold'>Estado: almacenado</span></div>`;
+        }
+        if (compras.length > 0) {
+            compras.forEach((compra, i) => {
+                html += `<div class='mb-4 border-b pb-2'>
+                    <div class='font-bold'>Compra #${i+1} (${compra.usuario || 'cliente'})</div>
+                    <ul>`;
+                compra.productos.forEach(p => {
+                    html += `<li>${p.titulo} x${p.cantidad}</li>`;
+                });
+                html += `</ul>
+                    <div>Dirección: ${compra.direccion.ciudad}, ${compra.direccion.calle}, ${compra.direccion.postal}</div>
+                    <div>Teléfono: ${compra.direccion.telefono}</div>
+                    <span class='text-green-600 font-bold'>Estado: ${compra.estado}</span>
+                </div>`;
+            });
+        }
+        if (!html) html = '<p class="text-gray-500">No hay carritos ni compras registradas.</p>';
+        cont.innerHTML = html;
+    }
+    renderAdminCarritos();
+    setInterval(renderAdminCarritos, 3000);
+    </script>
 </body>
 </html>

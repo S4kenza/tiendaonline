@@ -28,10 +28,9 @@
             <button type="submit">Entrar</button>
             <div class="error" id="errorMsg"></div>
         </form>
-        <button type="button" onclick="mostrarCredenciales()">Mostrar usuario de prueba</button>
+        <button type="button" id="verComoInvitado" style="margin-top:10px;">Ver como invitado</button>
     </div>
     <script>
-
         // Guarda el token en localStorage después de iniciar sesión correctamente
         function guardarToken(user) {
             localStorage.setItem('authToken', user.access_token);
@@ -57,6 +56,11 @@
                         const data = await res.json();
                         if (data.access_token && data.user.rol === 'cliente') {
                             guardarToken(data);
+                            // Si hay carrito pendiente, restaurarlo
+                            if (localStorage.getItem('carritoPendiente')) {
+                                localStorage.setItem('carrito', localStorage.getItem('carritoPendiente'));
+                                localStorage.removeItem('carritoPendiente');
+                            }
                             window.location.href = 'index.html';
                         } else if (data.access_token && data.user.rol === 'admin') {
                             guardarToken(data);
@@ -70,6 +74,15 @@
                         errorMsg.textContent = 'Error al conectar con el servidor.';
                     }
                 });
+            }
+            // Botón para ver como invitado
+            const btnInvitado = document.getElementById('verComoInvitado');
+            if (btnInvitado) {
+                btnInvitado.onclick = function() {
+                    localStorage.removeItem('authToken');
+                    localStorage.setItem('rol', 'invitado');
+                    window.location.href = 'index.html';
+                };
             }
         });
     </script>
